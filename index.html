@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOVA - Video &amp; Audio Joint Gen Demo</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <h1>Video &amp; Audio Joint Gen Demo</h1>
+  <p class="subtitle">MOVA: Towards Scalable and Synchronized Video-Audio Generation</p>
+  <div class="links">
+    <a href="https://github.com/OpenMOSS/MOVA" target="_blank">GitHub</a>
+    <a href="https://arxiv.org/abs/2602.08794" target="_blank">Paper</a>
+    <a href="https://huggingface.co/collections/OpenMOSS-Team/mova" target="_blank">HuggingFace</a>
+  </div>
+  <button id="lang-toggle" onclick="toggleLang()">Switch to English</button>
+  <div id="video-box">
+    <span id="placeholder">Select a prompt and click "Generate"</span>
+  </div>
+  <div id="prompt-area">
+    <label id="prompt-label">Select Prompt:</label>
+    <select id="prompt-select" onchange="showPreview()">
+      <option value="">-- Choose a prompt --</option>
+    </select>
+    <div id="prompt-preview"></div>
+  </div>
+  <button id="gen-btn" onclick="generate()">Generate</button>
+  <div id="status"></div>
+
+<script>
+let promptData = {};
+let lang = 'zh';
+
+const i18n = {
+  zh: {
+    toggleBtn: 'Switch to English',
+    label: '选择 Prompt:',
+    placeholder: '选择一个 prompt 然后点击 "Generate"',
+    choosePrompt: '-- 选择一个 prompt --',
+    generating: '正在生成视频和音频，请稍候...',
+    generated: '已生成: ',
+    selectFirst: '请先选择一个 prompt。',
+  },
+  en: {
+    toggleBtn: '切换为中文',
+    label: 'Select Prompt:',
+    placeholder: 'Select a prompt and click "Generate"',
+    choosePrompt: '-- Choose a prompt --',
+    generating: 'Generating video & audio, please wait...',
+    generated: 'Generated: ',
+    selectFirst: 'Please select a prompt first.',
+  }
+};
+
+async function init() {
+  const resp = await fetch('prompts/prompts.json');
+  promptData = await resp.json();
+  populateSelect();
+  updateUI();
+}
+
+function populateSelect() {
+  const sel = document.getElementById('prompt-select');
+  const cur = sel.value;
+  while (sel.options.length > 1) sel.remove(1);
+  sel.options[0].textContent = i18n[lang].choosePrompt;
+  for (const [id, obj] of Object.entries(promptData)) {
+    const opt = document.createElement('option');
+    opt.value = id;
+    const t = obj[lang] || obj.en;
+    opt.textContent = t.length > 100 ? t.slice(0, 100) + '...' : t;
+    sel.appendChild(opt);
+  }
+  if (cur) sel.value = cur;
+  showPreview();
+}
+
+function toggleLang() {
+  lang = lang === 'zh' ? 'en' : 'zh';
+  populateSelect();
+  updateUI();
+}
+
+function updateUI() {
+  document.getElementById('lang-toggle').textContent = i18n[lang].toggleBtn;
+  document.getElementById('prompt-label').textContent = i18n[lang].label;
+  const placeholder = document.getElementById('placeholder');
+  if (placeholder) placeholder.textContent = i18n[lang].placeholder;
+}
+
+function showPreview() {
+  const sel = document.getElementById('prompt-select');
+  const preview = document.getElementById('prompt-preview');
+  if (sel.value && promptData[sel.value]) {
+    preview.textContent = promptData[sel.value][lang] || promptData[sel.value].en;
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+async function generate() {
+  const sel = document.getElementById('prompt-select');
+  const btn = document.getElementById('gen-btn');
+  const box = document.getElementById('video-box');
+  const status = document.getElementById('status');
+  if (!sel.value) { status.textContent = i18n[lang].selectFirst; return; }
+  const videoId = sel.value;
+  btn.disabled = true;
+  box.innerHTML = '<span id="placeholder">' + i18n[lang].placeholder.replace(/select.*|选择.*/i, 'Generating...') + '</span>';
+  box.querySelector('#placeholder').textContent = lang === 'zh' ? '生成中...' : 'Generating...';
+  status.innerHTML = '<span class="spinner"></span>' + i18n[lang].generating;
+  const wait = 10000 + Math.random() * 5000;
+  await new Promise(r => setTimeout(r, wait));
+  const videoName = videoId + '.mp4';
+  box.innerHTML = '<video controls autoplay><source src="videos/' + videoName + '" type="video/mp4"></video>';
+  status.textContent = i18n[lang].generated + videoName;
+  btn.disabled = false;
+}
+
+init();
+</script>
+</body>
+</html>
