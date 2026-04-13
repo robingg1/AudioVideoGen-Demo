@@ -8,7 +8,7 @@
 </head>
 <body>
   <h1>Video &amp; Audio Joint Gen Demo</h1>
-  <button id="lang-toggle" onclick="toggleLang()">Switch to English</button>
+  <button id="lang-toggle" onclick="toggleLang()">切换为中文</button>
   <div id="video-box">
     <span id="placeholder">Select a prompt and click "Generate"</span>
   </div>
@@ -24,7 +24,7 @@
 
 <script>
 let promptData = {};
-let lang = 'zh';
+let lang = 'en';
 
 const i18n = {
   zh: {
@@ -107,7 +107,13 @@ async function generate() {
   status.innerHTML = '<span class="spinner"></span>' + i18n[lang].generating;
   const wait = 10000 + Math.random() * 5000;
   await new Promise(r => setTimeout(r, wait));
-  const videoName = videoId + '.mp4';
+  const entry = promptData[videoId];
+  let videoName;
+  if (entry && entry.videos && entry.videos.length > 0) {
+    videoName = entry.videos[Math.floor(Math.random() * entry.videos.length)];
+  } else {
+    videoName = videoId + '.mp4';
+  }
   box.innerHTML = '<video controls autoplay><source src="videos/' + videoName + '" type="video/mp4"></video>';
   status.textContent = i18n[lang].generated + videoName;
   btn.disabled = false;
