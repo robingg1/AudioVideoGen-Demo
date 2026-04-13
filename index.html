@@ -25,6 +25,7 @@
 <script>
 let promptData = {};
 let lang = 'en';
+let lastPlayed = {};
 
 const i18n = {
   zh: {
@@ -110,10 +111,13 @@ async function generate() {
   const entry = promptData[videoId];
   let videoName;
   if (entry && entry.videos && entry.videos.length > 0) {
-    videoName = entry.videos[Math.floor(Math.random() * entry.videos.length)];
+    const candidates = entry.videos.filter(v => v !== lastPlayed[videoId]);
+    const pool = candidates.length > 0 ? candidates : entry.videos;
+    videoName = pool[Math.floor(Math.random() * pool.length)];
   } else {
     videoName = videoId + '.mp4';
   }
+  lastPlayed[videoId] = videoName;
   box.innerHTML = '<video controls autoplay><source src="videos/' + videoName + '" type="video/mp4"></video>';
   status.textContent = i18n[lang].generated + videoName;
   btn.disabled = false;
